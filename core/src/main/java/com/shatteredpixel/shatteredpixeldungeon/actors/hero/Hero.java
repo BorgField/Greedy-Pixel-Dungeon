@@ -254,11 +254,8 @@ public class Hero extends Char {
 		belongings = new Belongings(this);
 		// 修改 multiWielding 初始化，传递 this 作为 Hero 引用
 		multiWielding = new MultiWielding(
-				this, // 传递 Hero 引用
-				belongings::weapon,
-				belongings::weapon2,
-				belongings::weapon3,
-				belongings::weapon4
+				this // 传递 Hero 引用
+
 		);
 		visibleEnemies = new ArrayList<>();
 	}
