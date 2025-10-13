@@ -155,7 +155,13 @@ public class WheelChair extends Artifact {
 
         @Override
         public String prompt() {
-            return Messages.get( WheelChair.class, "prompt");
+            int maxRange = 2;
+            if (level() == 5) {
+                maxRange += 1;
+            } else if (level() == 10) {
+                maxRange += 2;
+            }
+            return Messages.get( WheelChair.class, "prompt" , maxRange);
         }
     };
 

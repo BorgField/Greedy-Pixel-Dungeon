@@ -471,28 +471,80 @@ public class WndRanking extends WndTabbed {
 	}
 
 	private class ChallengesTab extends Group{
+		private float pos;
+		private final ScrollPane challenges;
+		private static final int GAP = 1;
+		private static final int BTN_HEIGHT = 16;
 
-		public ChallengesTab(){
+		public ChallengesTab() {
 			super();
 
 			camera = WndRanking.this.camera;
 
+			// 创建一个组件作为滚动内容
+			Component content = new Component();
+			challenges = new ScrollPane(content);
+			add(challenges);
+
+			updateList();
+		}
+
+		private void updateList() {
+			// 设置滚动面板
+			challenges.content().clear();
+
+			// 计算总高度
+			float totalHeight = 30;
+			for (int i=0; i < Challenges.NAME_IDS.length; i++) {
+				totalHeight += BTN_HEIGHT; // 每个挑战项的高度
+				if (i > 0) {
+					totalHeight += GAP; // 间隔
+				}
+			}
+
+			// 设置内容尺寸，确保可以滚动
+			challenges.content().setSize(WIDTH, totalHeight);
+			challenges.setRect(0, 0, WIDTH, HEIGHT);
+
 			float pos = 0;
+			boolean isCustom = false;
 
 			for (int i=0; i < Challenges.NAME_IDS.length; i++) {
-
 				final String challenge = Challenges.NAME_IDS[i];
+
+				// 添加传统挑战标题
+				if(i == 0) {
+					RenderedTextBlock block = PixelScene.renderTextBlock(9);
+					block.text(Messages.get(Challenges.class, "traditional"));
+					block.hardlight(Window.TITLE_COLOR);
+					block.setPos((WIDTH - block.width()) / 2, pos + 1);
+					PixelScene.align(block);
+					challenges.content().add(block);
+					pos += block.height() + 5;
+				}
+
+				// 添加扩展挑战标题
+				if(Challenges.NAME_IDS[i].equals("test_mode")) {
+					RenderedTextBlock block = PixelScene.renderTextBlock(9);
+					block.text(Messages.get(Challenges.class, "expansion"));
+					block.hardlight(Window.TITLE_COLOR);
+					block.setPos((WIDTH - block.width()) / 2, pos + 4);
+					PixelScene.align(block);
+					challenges.content().add(block);
+					pos += block.height() + 8;
+					isCustom = true;
+				}
 
 				CheckBox cb = new CheckBox( Messages.titleCase(Messages.get(Challenges.class, challenge)) );
 				cb.checked( (Dungeon.challenges & Challenges.MASKS[i]) != 0 );
 				cb.active = false;
 
 				if (i > 0) {
-					pos += 1;
+					pos += GAP;
 				}
-				cb.setRect( 0, pos, WIDTH-16, 15 );
+				cb.setRect( 0, pos, WIDTH-16, BTN_HEIGHT );
 
-				add( cb );
+				challenges.content().add( cb );
 
 				IconButton info = new IconButton(Icons.get(Icons.INFO)){
 					@Override
@@ -503,13 +555,12 @@ public class WndRanking extends WndTabbed {
 						);
 					}
 				};
-				info.setRect(cb.right(), pos, 16, 15);
-				add(info);
+				info.setRect(cb.right(), pos, 16, BTN_HEIGHT);
+				challenges.content().add(info);
 
 				pos = cb.bottom();
 			}
 		}
-
 	}
 
 	private class ItemButton extends Button {
