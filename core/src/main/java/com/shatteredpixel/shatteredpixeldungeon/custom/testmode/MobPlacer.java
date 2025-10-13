@@ -469,6 +469,7 @@ public class MobPlacer extends TestItem {
         GOLDEN_MIMIC(GoldenMimic.class,DictSpriteSheet.MIMIC_GOLDEN),
         CRYSTAL_MIMIC(CrystalMimic.class,DictSpriteSheet.MIMIC_CRYSTAL),
         EBONY_MIMIC(EbonyMimic.class,DictSpriteSheet.MIMIC_EBONY),
+        TESTRAT(TestRat.class, DictSpriteSheet.RAT),
         WRAITH(Wraith.class, DictSpriteSheet.WRAITH),
         TORMENTED_SPIRIT(TormentedSpirit.class,DictSpriteSheet.TORMENTED_SPIRIT),
         PIRANHA(Piranha.class, DictSpriteSheet.FISH),

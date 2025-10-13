@@ -66,7 +66,7 @@ public class StrengthSetting extends TestItem {
             level.setRect(0,str.bottom() + 5,120,24);
             add(level);
 
-            text = PixelScene.renderTextBlock("力量: " + Dungeon.hero.STR + "，等级: " + Dungeon.hero.lvl,6);
+            text = PixelScene.renderTextBlock("力量: " + Dungeon.hero.STR + "，等级: " + Dungeon.hero.lvl,8);
             text.setPos((120 - text.width()) / 2,level.bottom() + 5);
             add(text);
 
@@ -81,7 +81,7 @@ public class StrengthSetting extends TestItem {
                     hide();
                 }
             };
-            confirm.setRect(0,text.bottom() + 5,50,24);
+            confirm.setRect(0,text.bottom() + 3,59,20);
             add(confirm);
 
             cancel = new RedButton("取消") {
@@ -91,10 +91,10 @@ public class StrengthSetting extends TestItem {
                     hide();
                 }
             };
-            cancel.setRect(confirm.right() + 5,confirm.top(),50,24);
+            cancel.setRect(confirm.right() + 2,confirm.top(),59,20);
             add(cancel);
 
-            resize(120, (int) (confirm.bottom() + 5));
+            resize(120, (int) (confirm.bottom() + 2));
 
         }
 

@@ -394,9 +394,9 @@ public abstract class Char extends Actor {
 //			}
 //		}
 //		return result;
-		if (Dungeon.hero.belongings.thrownWeapon != null) {
-			GLog.i(Dungeon.hero.belongings.thrownWeapon.trueName()+"投掷武器1");
-		}
+//		if (Dungeon.hero.belongings.thrownWeapon != null) {
+//			GLog.i(Dungeon.hero.belongings.thrownWeapon.trueName()+"投掷武器1");
+//		}
 		if (Dungeon.hero.belongings.abilityWeapon != null) {
 			GLog.w(Dungeon.hero.belongings.abilityWeapon.trueName()+"能力武器1");
 		}
@@ -663,10 +663,9 @@ public abstract class Char extends Actor {
 	}
 
 	public static boolean hit( Char attacker, Char defender, float accMulti, boolean magic ) {
-		// 检查防御者是否有DispellingMini的buff
+
 		PotionOfDispelling.DispellingMini dispellingBuff = defender.buff(PotionOfDispelling.DispellingMini.class);
 		if (dispellingBuff != null && magic) {
-			// 记录攻击者和防御者信息到buff中
 			dispellingBuff.setAttacker(attacker);
 			dispellingBuff.setDefender(defender);
 		}
