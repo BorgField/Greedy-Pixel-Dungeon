@@ -1470,6 +1470,9 @@ public class Hero extends Char {
 		damage = super.attackProc( enemy, damage );
 
 		KindOfWeapon wep;
+
+		if (MultiWielding.weaponNotNull()) damage = MultiWielding.weaponProc( this, enemy, damage );
+
 		if (RingOfForce.fightingUnarmed(this) && !RingOfForce.unarmedGetsWeaponEnchantment(this)){
 			wep = null;
 		} else {

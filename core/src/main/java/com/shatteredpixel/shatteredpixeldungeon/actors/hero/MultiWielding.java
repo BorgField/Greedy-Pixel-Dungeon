@@ -11,8 +11,8 @@ import java.util.List;
 
 public class MultiWielding {
     private final Hero hero;
-    private int currentAttackIndex = 0;
-    private final KindOfWeapon[] weapons = new KindOfWeapon[4];
+    private static int currentAttackIndex = 0;
+    private static final KindOfWeapon[] weapons = new KindOfWeapon[4];
     private final boolean[] canAttack = new boolean[4];
 
     public MultiWielding(Hero hero) {
@@ -28,7 +28,14 @@ public class MultiWielding {
         weapons[3] = hero.belongings.weapon4;
     }
 
-    public KindOfWeapon currentWeapon() {
+    public static boolean weaponNotNull() {
+        return weapons[0] != null
+                ||weapons[1] != null
+                ||weapons[2] != null
+                ||weapons[3] != null;
+    }
+
+    public static KindOfWeapon currentWeapon() {
         if (currentAttackIndex >= 0 && currentAttackIndex < weapons.length) {
             return weapons[currentAttackIndex];
         }
@@ -68,7 +75,7 @@ public class MultiWielding {
         return Math.round(baseDamage * groupMultiplier);
     }
 
-    public int weaponProc(Char attacker, Char defender, int damage) {
+    public static int weaponProc(Char attacker, Char defender, int damage) {
         KindOfWeapon wep = currentWeapon();
         if (wep == null) return damage;
 
@@ -85,11 +92,11 @@ public class MultiWielding {
         return damage + adjustedExtraDamage;
     }
 
-    private int getCurrentWeaponIndex() {
+    private static int getCurrentWeaponIndex() {
         return currentAttackIndex;
     }
 
-    private float calculateGroupMultiplier(int weaponIndex) {
+    private static float calculateGroupMultiplier(int weaponIndex) {
         if (weaponIndex < 2) {
             return calculateGroup1Multiplier(weaponIndex);
         } else {
@@ -97,7 +104,7 @@ public class MultiWielding {
         }
     }
 
-    private float calculateGroup1Multiplier(int weaponIndex) {
+    private static float calculateGroup1Multiplier(int weaponIndex) {
         boolean hasWeapon0 = weapons[0] != null;
         boolean hasWeapon1 = weapons[1] != null;
 
@@ -112,7 +119,7 @@ public class MultiWielding {
         return 1.0f;
     }
 
-    private float calculateGroup2Multiplier(int weaponIndex) {
+    private static float calculateGroup2Multiplier(int weaponIndex) {
         boolean hasWeapon2 = weapons[2] != null;
         boolean hasWeapon3 = weapons[3] != null;
 
