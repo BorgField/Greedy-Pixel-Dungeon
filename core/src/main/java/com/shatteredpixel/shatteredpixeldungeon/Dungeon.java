@@ -26,6 +26,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Amok;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AscensionChallenge;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Awareness;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Dread;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Light;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicalSight;
@@ -494,10 +495,16 @@ public class Dungeon {
 				}
 			}
 		}
-		
-		Light light = hero.buff( Light.class );
-		hero.viewDistance = light == null ? level.viewDistance : Math.max( Light.DISTANCE, level.viewDistance );
-		
+
+		Light light = hero.buff(Light.class);
+		int viewDistance = (light == null) ? level.viewDistance : Math.max(Light.DISTANCE, level.viewDistance);
+
+		for (Buff buff : hero.buffs()) {
+			viewDistance += (int) buff.visionModifier();// 将每个buff提供的视野修正值加到总视野上
+		}
+		// 3. 应用最终计算出的视野
+		hero.viewDistance = viewDistance;
+
 		hero.curAction = hero.lastAction = null;
 
 		if (hero.buff(AbsoluteBlindness.class) != null) {

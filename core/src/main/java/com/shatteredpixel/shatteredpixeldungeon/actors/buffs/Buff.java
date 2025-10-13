@@ -63,6 +63,8 @@ public class Buff extends Actor {
 	public HashSet<Class> immunities() {
 		return new HashSet<>(immunities);
 	}
+
+	public float visionModifier() { return 0f;}
 	
 	public boolean attachTo( Char target ) {
 

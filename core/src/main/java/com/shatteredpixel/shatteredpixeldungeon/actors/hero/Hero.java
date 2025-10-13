@@ -123,6 +123,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfHealing;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.elixirs.ElixirOfMight;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.PotionOfDivineInspiration;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.mini.PotionOfBurst;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.mini.PotionOfPhantom;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.mini.PotionOfSwift;
 import com.shatteredpixel.shatteredpixeldungeon.items.quest.DarkGold;
 import com.shatteredpixel.shatteredpixeldungeon.items.quest.Pickaxe;
@@ -2025,6 +2026,10 @@ public class Hero extends Char {
 				
 				if (buff(ElixirOfMight.HTBoost.class) != null){
 					buff(ElixirOfMight.HTBoost.class).onLevelUp();
+				}
+
+				if (buff(PotionOfPhantom.PhantomMini.class) != null){
+					buff(PotionOfPhantom.PhantomMini.class).onLevelUp();
 				}
 				
 				updateHT( true );
