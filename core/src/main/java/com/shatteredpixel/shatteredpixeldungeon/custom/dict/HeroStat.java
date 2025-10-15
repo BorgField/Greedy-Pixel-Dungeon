@@ -1,0 +1,4 @@
+package com.shatteredpixel.shatteredpixeldungeon.custom.dict;
+
+public class HeroStat {
+}

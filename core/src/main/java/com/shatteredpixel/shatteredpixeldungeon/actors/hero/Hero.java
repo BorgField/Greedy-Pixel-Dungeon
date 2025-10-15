@@ -26,6 +26,7 @@ import static com.shatteredpixel.shatteredpixeldungeon.Dungeon.hero;
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Badges;
 import com.shatteredpixel.shatteredpixeldungeon.Bones;
+import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.GamesInProgress;
 import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
@@ -470,7 +471,9 @@ public class Hero extends Char {
 		}
 		Buff.affect( this, Regeneration.class );
 		Buff.affect( this, Hunger.class );
-		Buff.affect( this, GameTracker.class);
+		if(Dungeon.isChallenged(Challenges.TEST_MODE)) {
+			Buff.affect( this, GameTracker.class);
+		}
 	}
 	
 	public int tier() {
@@ -983,6 +986,11 @@ public class Hero extends Char {
 	}
 	
 	private boolean actMove( HeroAction.Move action ) {
+//		for (Buff buff : hero.buffs()) {
+//			if (Dungeon.isChallenged(Challenges.TEST_MODE) && !(buff instanceof GameTracker)) {
+//				Buff.affect(this, GameTracker.class);
+//			}
+//		}
 
 		if (getCloser( action.dst )) {
 			canSelfTrample = false;

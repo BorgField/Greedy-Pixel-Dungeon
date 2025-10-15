@@ -45,6 +45,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Ghost;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Imp;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Wandmaker;
 import com.shatteredpixel.shatteredpixeldungeon.custom.buffs.AbsoluteBlindness;
+import com.shatteredpixel.shatteredpixeldungeon.custom.buffs.modifier.LevelSwitchListener;
 import com.shatteredpixel.shatteredpixeldungeon.items.Amulet;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
@@ -510,6 +511,8 @@ public class Dungeon {
 		if (hero.buff(AbsoluteBlindness.class) != null) {
 			hero.viewDistance = 0;
 		}
+
+		LevelSwitchListener.onLevelSwitch();
 
 		observe();
 		try {
