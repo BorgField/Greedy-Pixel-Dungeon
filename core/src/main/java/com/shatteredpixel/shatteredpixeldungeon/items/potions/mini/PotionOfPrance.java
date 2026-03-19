@@ -7,6 +7,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Haste;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Stamina;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.EtherealChains;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.WheelChair;
@@ -148,15 +149,13 @@ public class PotionOfPrance extends MiniPotion {
                 if (target != null && (Dungeon.level.visited[target] || Dungeon.level.mapped[target])){
 
                     PathFinder.buildDistanceMap(target, BArray.or(Dungeon.level.passable, Dungeon.level.avoid, null));
-                    // 将 curUser.pos 改为 hero.pos
                     if (!(Dungeon.level instanceof MiningLevel) && PathFinder.distance[hero.pos] == Integer.MAX_VALUE){
                         GLog.w( Messages.get(EtherealChains.class, "cant_reach") );
                         return;
                     }
 
-                    // 将 curUser.pos 改为 hero.pos
                     int distance = Dungeon.level.distance(hero.pos, target);
-                    // 检查距离是否超过6
+                    // 检查距离是否超过2
                     if (distance > 2) {
                         GLog.w(Messages.get(TendonHookSickle.class, "out_of_range"));
                         return;
@@ -185,9 +184,9 @@ public class PotionOfPrance extends MiniPotion {
                             GameScene.updateFog();
 
                             WandOfBlastWave.BlastWave.blast(dest);
-                            PixelScene.shake(2, 0.5f);
+//                            PixelScene.shake(2, 0.5f);
 
-                            Buff.prolong( hero, Haste.class, (10));
+//                            Buff.prolong( hero, Stamina.class, (3));
                             Invisibility.dispel();
                             hero.spendAndNext(Actor.TICK);
                         }

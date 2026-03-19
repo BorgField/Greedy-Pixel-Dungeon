@@ -108,6 +108,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.EtherealChains;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.HolyTome;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.HornOfPlenty;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.MasterThievesArmband;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.ShivaBangle;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TalismanOfForesight;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TimekeepersHourglass;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.WheelChair;
@@ -458,7 +459,7 @@ public class Hero extends Char {
 
 	@Override
 	public boolean blockSound(float pitch) {
-		if ( belongings.weapon() != null && belongings.weapon().defenseFactor(this) >= 4 ){
+		if ( multiWielding.weaponNotNull() && multiWielding.weaponDefenseFactor(this) >= 4 ){
 			Sample.INSTANCE.play( Assets.Sounds.HIT_PARRY, 1, pitch);
 			return true;
 		}
@@ -607,6 +608,12 @@ public class Hero extends Char {
 			evasion = belongings.armor().evasionFactor(this, evasion);
 		}
 
+		// ShivaBangle空手时增加闪避
+		if (buff(ShivaBangle.MultiArmBlows.class) != null
+				&& belongings.attackingWeapon() == null) {
+			evasion += buff(ShivaBangle.MultiArmBlows.class).evasionBonus();
+		}
+
 		return Math.round(evasion);
 	}
 
@@ -650,10 +657,17 @@ public class Hero extends Char {
 			}
 			if (armDr > 0) dr += armDr;
 		}
-		if (belongings.weapon() != null && !RingOfForce.fightingUnarmed(this))  {
-			int wepDr = Random.NormalIntRange( 0 , belongings.weapon().defenseFactor( this ) );
-			if (STR() < ((Weapon)belongings.weapon()).STRReq()){
-				wepDr -= 2*(((Weapon)belongings.weapon()).STRReq() - STR());
+		if (multiWielding.weaponNotNull() && !RingOfForce.fightingUnarmed(this))  {
+			int wepDr = Random.NormalIntRange( 0 , multiWielding.weaponDefenseFactor( this ) );
+			// 检查所有武器的力量需求，取最大值进行惩罚计算
+			int maxStrReq = 0;
+			if (belongings.weapon != null) maxStrReq = Math.max(maxStrReq, ((Weapon)belongings.weapon).STRReq());
+			if (belongings.weapon2 != null) maxStrReq = Math.max(maxStrReq, ((Weapon)belongings.weapon2).STRReq());
+			if (belongings.weapon3 != null) maxStrReq = Math.max(maxStrReq, ((Weapon)belongings.weapon3).STRReq());
+			if (belongings.weapon4 != null) maxStrReq = Math.max(maxStrReq, ((Weapon)belongings.weapon4).STRReq());
+			
+			if (maxStrReq > 0 && STR() < maxStrReq){
+				wepDr -= 2*(maxStrReq - STR());
 			}
 			if (wepDr > 0) dr += wepDr;
 		}
@@ -809,6 +823,12 @@ public class Hero extends Char {
 			//and augments + brawler's stance! My goodness, so many options now compared to 2014!
 			if (RingOfForce.unarmedGetsWeaponAugment(this)){
 				delay = ((Weapon)belongings.weapon).augment.delayFactor(delay);
+			}
+
+			// ShivaBangle空手时减少攻击延迟
+			if (buff(ShivaBangle.MultiArmBlows.class) != null
+					&& belongings.attackingWeapon() == null) {
+				delay = buff(ShivaBangle.MultiArmBlows.class).attackDelayBonus(delay);
 			}
 
 			return delay/speed;
@@ -1479,12 +1499,17 @@ public class Hero extends Char {
 
 		KindOfWeapon wep;
 
-		if (MultiWielding.weaponNotNull()) damage = MultiWielding.weaponProc( this, enemy, damage );
+		if (multiWielding.weaponNotNull()) damage = multiWielding.weaponProc( this, enemy, damage );
 
 		if (RingOfForce.fightingUnarmed(this) && !RingOfForce.unarmedGetsWeaponEnchantment(this)){
 			wep = null;
 		} else {
 			wep = belongings.attackingWeapon();
+		}
+
+		// ShivaBangle攻击时获取经验（空手时）
+		if (buff(ShivaBangle.MultiArmBlows.class) != null) {
+			buff(ShivaBangle.MultiArmBlows.class).onAttack();
 		}
 
 		damage = Talent.onAttackProc( this, enemy, damage );
@@ -1505,6 +1530,10 @@ public class Hero extends Char {
 				if (buff(Smite.SmiteTracker.class) != null) {
 					enemy.damage(Smite.bonusDmg(this, enemy), Smite.INSTANCE);
 				}
+			}
+			// ShivaBangle空手时增加伤害
+			if (buff(ShivaBangle.MultiArmBlows.class) != null ) {
+				damage = buff(ShivaBangle.MultiArmBlows.class).damageBonus(damage);
 			}
 		}
 		

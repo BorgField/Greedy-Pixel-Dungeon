@@ -1,19 +1,19 @@
 package com.shatteredpixel.shatteredpixeldungeon.actors.hero;
 
-import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
+
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.items.KindOfWeapon;
-import com.watabou.utils.QuietCallable;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.SpiritBow;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.MissileWeapon;
+import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class MultiWielding {
     private final Hero hero;
-    private static int currentAttackIndex = 0;
-    private static final KindOfWeapon[] weapons = new KindOfWeapon[4];
-    private final boolean[] canAttack = new boolean[4];
+    private int currentAttackIndex = 0;
+    private final KindOfWeapon[] weapons = new KindOfWeapon[4];
 
     public MultiWielding(Hero hero) {
         this.hero = hero;
@@ -28,57 +28,34 @@ public class MultiWielding {
         weapons[3] = hero.belongings.weapon4;
     }
 
-    public static boolean weaponNotNull() {
+    public boolean weaponNotNull() {
         return weapons[0] != null
-                ||weapons[1] != null
-                ||weapons[2] != null
-                ||weapons[3] != null;
+                || weapons[1] != null
+                || weapons[2] != null
+                || weapons[3] != null;
     }
 
-    public static KindOfWeapon currentWeapon() {
+    public KindOfWeapon currentWeapon() {
         if (currentAttackIndex >= 0 && currentAttackIndex < weapons.length) {
             return weapons[currentAttackIndex];
         }
         return null;
     }
 
-    public void nextWeapon() {
-        int startIndex = currentAttackIndex;
-        do {
-            currentAttackIndex = (currentAttackIndex + 1) % 4;
-        } while (weapons[currentAttackIndex] == null && currentAttackIndex != startIndex);
-    }
-
-    public boolean weaponCanAttack(Char owner, Char enemy) {
-        if (enemy == null || !Actor.chars().contains(enemy)) {
-            Arrays.fill(canAttack, false);
-            return false;
-        }
-
-        updateWeapons(); // 确保武器是最新的
-
-        for (int i = 0; i < 4; i++) {
-            KindOfWeapon wep = weapons[i];
-            canAttack[i] = wep != null && wep.canReach(owner, enemy.pos);
-        }
-        return canAttack[0] || canAttack[1] || canAttack[2] || canAttack[3];
-    }
-
-    public int weaponDamageRoll(Char owner) {
-        KindOfWeapon wep = currentWeapon();
-        if (wep == null) return 0;
-
-        int baseDamage = wep.damageRoll(owner);
-        int weaponIndex = getCurrentWeaponIndex();
-
-        float groupMultiplier = calculateGroupMultiplier(weaponIndex);
-        return Math.round(baseDamage * groupMultiplier);
-    }
-
-    public static int weaponProc(Char attacker, Char defender, int damage) {
+    public int weaponProc(Char attacker, Char defender, int damage) {
         KindOfWeapon wep = currentWeapon();
         if (wep == null) return damage;
 
+        // 远程武器不参与双持，直接返回原值
+        if (wep instanceof MissileWeapon || wep instanceof SpiritBow) {
+            return wep.proc(attacker, defender, damage);
+        }
+
+        return calculateWeaponProc(attacker, defender, damage, wep);
+    }
+
+    // 统一处理武器proc计算
+    private int calculateWeaponProc(Char attacker, Char defender, int damage, KindOfWeapon wep) {
         int weaponIndex = getCurrentWeaponIndex();
         float groupMultiplier = calculateGroupMultiplier(weaponIndex);
 
@@ -92,43 +69,30 @@ public class MultiWielding {
         return damage + adjustedExtraDamage;
     }
 
-    private static int getCurrentWeaponIndex() {
+    private int getCurrentWeaponIndex() {
         return currentAttackIndex;
     }
 
-    private static float calculateGroupMultiplier(int weaponIndex) {
+    private float calculateGroupMultiplier(int weaponIndex) {
         if (weaponIndex < 2) {
-            return calculateGroup1Multiplier(weaponIndex);
+            return calculateGroupMultiplier(weaponIndex, 0, 1);
         } else {
-            return calculateGroup2Multiplier(weaponIndex);
+            return calculateGroupMultiplier(weaponIndex, 2, 3);
         }
     }
 
-    private static float calculateGroup1Multiplier(int weaponIndex) {
-        boolean hasWeapon0 = weapons[0] != null;
-        boolean hasWeapon1 = weapons[1] != null;
-
-        if (weaponIndex == 0) {
-            // 武器0：双持时75%，单独时100%
-            return (hasWeapon0 && hasWeapon1) ? 0.75f : 1.0f;
-        } else if (weaponIndex == 1) {
-            // 武器1：双持时50%，单独时100%
-            return (hasWeapon0 && hasWeapon1) ? 0.5f : 1.0f;
-        }
-
-        return 1.0f;
-    }
-
-    private static float calculateGroup2Multiplier(int weaponIndex) {
-        boolean hasWeapon2 = weapons[2] != null;
-        boolean hasWeapon3 = weapons[3] != null;
-
-        if (weaponIndex == 2) {
-            // 武器2：双持时75%，单独时100%
-            return (hasWeapon2 && hasWeapon3) ? 0.75f : 1.0f;
-        } else if (weaponIndex == 3) {
-            // 武器3：双持时50%，单独时100%
-            return (hasWeapon2 && hasWeapon3) ? 0.5f : 1.0f;
+    // 通用的组倍率计算方法
+    private float calculateGroupMultiplier(int weaponIndex, int firstWeaponIndex, int secondWeaponIndex) {
+        boolean hasFirstWeapon = weapons[firstWeaponIndex] != null;
+        boolean hasSecondWeapon = weapons[secondWeaponIndex] != null;
+        boolean isDualWielding = hasFirstWeapon && hasSecondWeapon;
+    
+        if (weaponIndex == firstWeaponIndex) {
+            // 主武器：双持时 75%，单独时 100%
+            return isDualWielding ? 0.75f : 1.0f;
+        } else if (weaponIndex == secondWeaponIndex) {
+            // 副武器：双持时 50%，单独时 100%
+            return isDualWielding ? 0.5f : 1.0f;
         }
 
         return 1.0f;
@@ -144,8 +108,11 @@ public class MultiWielding {
             }
         }
 
+        // 如果没有武器，使用空手攻击
         if (availableWeapons.isEmpty()) {
-            return false;
+            boolean hit = hero.attack(enemy, dmgMulti, dmgBonus, accMulti);
+            hero.spend(hero.attackDelay());
+            return hit;
         }
 
         float totalDelay = 0f;
@@ -154,81 +121,103 @@ public class MultiWielding {
         }
         float averageDelay = totalDelay / availableWeapons.size();
 
-        boolean anyHit = false;
-        KindOfWeapon originalAbilityWeapon = hero.belongings.abilityWeapon;
+        // 执行分组攻击
+        boolean anyHit = executeGroupedAttacks(enemy, dmgMulti, dmgBonus, accMulti, availableWeapons);
 
-        anyHit = executeGroupedAttacks(enemy, dmgMulti, dmgBonus, accMulti, availableWeapons, originalAbilityWeapon);
-
-        hero.belongings.abilityWeapon = originalAbilityWeapon;
         hero.spend(averageDelay);
-
         return anyHit;
     }
 
     private boolean executeGroupedAttacks(Char enemy, float dmgMulti, float dmgBonus, float accMulti,
-                                          List<KindOfWeapon> availableWeapons, KindOfWeapon originalAbilityWeapon) {
+                                          List<KindOfWeapon> availableWeapons) {
         boolean anyHit = false;
+        KindOfWeapon originalAbilityWeapon = hero.belongings.abilityWeapon;
 
         // 第一组攻击
         boolean group1Hit = executeGroupAttack(enemy, dmgMulti, dmgBonus, accMulti, availableWeapons,
-                originalAbilityWeapon, 0, 1);
+                0, 1);
         anyHit = anyHit || group1Hit;
 
         if (!enemy.isAlive()) return anyHit;
 
         // 第二组攻击
         boolean group2Hit = executeGroupAttack(enemy, dmgMulti, 0, accMulti, availableWeapons,
-                originalAbilityWeapon, 2, 3);
+                2, 3);
         anyHit = anyHit || group2Hit;
+
+        hero.belongings.abilityWeapon = originalAbilityWeapon;
 
         return anyHit;
     }
 
-    private boolean executeGroupAttack(Char enemy, float dmgMulti, float dmgBonus, float accMulti,
-                                       List<KindOfWeapon> availableWeapons, KindOfWeapon originalAbilityWeapon,
-                                       int weaponIndex1, int weaponIndex2) {
+    private boolean executeGroupAttack(
+            Char enemy, float dmgMulti, float dmgBonus, float accMulti,
+            List<KindOfWeapon> availableWeapons, int weaponIndex1, int weaponIndex2) {
+
         boolean anyHit = false;
 
-        KindOfWeapon weapon1 = weaponIndex1 < weapons.length ? weapons[weaponIndex1] : null;
-        KindOfWeapon weapon2 = weaponIndex2 < weapons.length ? weapons[weaponIndex2] : null;
-
-        boolean hasWeapon1 = weapon1 != null && availableWeapons.contains(weapon1);
-        boolean hasWeapon2 = weapon2 != null && availableWeapons.contains(weapon2);
-
-        // 计算是否为双持状态
-        boolean isDualWielding = hasWeapon1 && hasWeapon2;
-
-        if (hasWeapon1) {
-            hero.belongings.abilityWeapon = weapon1;
-            float currentDmgMulti = dmgMulti;
-
-            // 武器0/2：双持时75%，单独时100%
-            if (isDualWielding) {
-                currentDmgMulti *= 0.75f;
-            }
-
-            boolean hit = hero.attack(enemy, currentDmgMulti, dmgBonus, accMulti);
-            anyHit = anyHit || hit;
-            if (!enemy.isAlive()) return anyHit;
+        // 执行第一个武器的攻击
+        anyHit = executeWeaponAttack(
+                enemy, dmgMulti, dmgBonus, accMulti, availableWeapons,
+                weaponIndex1, weaponIndex2, true) || anyHit;
+        
+        // 如果敌人还活着，执行第二个武器的攻击
+        if (enemy.isAlive()) {
+            anyHit = executeWeaponAttack(
+                    enemy, dmgMulti, 0, accMulti, availableWeapons,
+                    weaponIndex2, weaponIndex1, false) || anyHit;
         }
-
-        if (hasWeapon2) {
-            hero.belongings.abilityWeapon = weapon2;
-            float currentDmgMulti = dmgMulti;
-
-            // 武器1/3：双持时50%，单独时100%
-            if (isDualWielding) {
-                currentDmgMulti *= 0.5f;
-            }
-
-            // 第二组攻击不享受伤害加成
-            float currentDmgBonus = (weaponIndex2 < 2) ? dmgBonus : 0;
-
-            boolean hit = hero.attack(enemy, currentDmgMulti, currentDmgBonus, accMulti);
-            anyHit = anyHit || hit;
-            if (!enemy.isAlive()) return anyHit;
-        }
-
+        
         return anyHit;
+    }
+    
+    // 通用的武器攻击执行方法
+    private boolean executeWeaponAttack(Char enemy, float dmgMulti, float dmgBonus, float accMulti,
+                                       List<KindOfWeapon> availableWeapons,
+                                       int weaponIndex, int otherWeaponIndex, boolean isFirstWeapon) {
+
+        KindOfWeapon weapon = weapons[weaponIndex];
+        KindOfWeapon otherWeapon = weapons[otherWeaponIndex];
+        
+        boolean hasWeapon = weapon != null && availableWeapons.contains(weapon);
+        boolean hasOtherWeapon = otherWeapon != null && availableWeapons.contains(otherWeapon);
+        
+        if (!hasWeapon) {
+            return false;
+        }
+
+        // 远程武器不参与双持，单独处理
+        if (weapon instanceof MissileWeapon || weapon instanceof SpiritBow) {
+            hero.belongings.abilityWeapon = weapon;
+            return hero.attack(enemy, dmgMulti, dmgBonus, accMulti);
+        }
+
+        hero.belongings.abilityWeapon = weapon;
+        float currentDmgMulti = dmgMulti;
+        
+        // 计算是否为双持状态
+        boolean isDualWielding = hasWeapon && hasOtherWeapon;
+        
+        // 主武器：双持时 75%，单独时 100%
+        // 副武器：双持时 50%，单独时 100%
+        if (isDualWielding) {
+            currentDmgMulti *= isFirstWeapon ? 0.75f : 0.5f;
+        }
+        
+        // 第二组攻击不享受伤害加成
+        float currentDmgBonus = isFirstWeapon ? dmgBonus : 0;
+
+        return hero.attack(enemy, currentDmgMulti, currentDmgBonus, accMulti);
+    }
+
+    // 防御计算 - 累加所有武器的防御加成
+    public int weaponDefenseFactor(Char owner) {
+        int defenceFactor = 0;
+        for (KindOfWeapon w : weapons) {
+            if (w != null) {
+                defenceFactor += w.defenseFactor(owner);
+            }
+        }
+        return defenceFactor;
     }
 }

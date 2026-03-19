@@ -243,7 +243,6 @@ public class WndBag extends WndTabbed {
 
     // Equipped items
     Belongings stuff = hero.belongings;
-	boolean shivaWeapon = hero.buff(ShivaBangle.MultiArmBlows.class) != null;
 	placeItem(stuff.weapon != null ? stuff.weapon : new Placeholder(ItemSpriteSheet.WEAPON_HOLDER));
 	if (stuff.weapon instanceof MeleeWeapon && ((MeleeWeapon) stuff.weapon).isTwoHanded()) {
 		placeItem(new Placeholder(ItemSpriteSheet.X_NO));
@@ -257,14 +256,14 @@ public class WndBag extends WndTabbed {
 
     int equipped = 6;
 
-	if (shivaWeapon) {
-		placeItem(stuff.weapon3 != null ? stuff.weapon3 : new Placeholder(ItemSpriteSheet.WEAPON_HOLDER));
-		if (stuff.weapon3 instanceof MeleeWeapon && ((MeleeWeapon) stuff.weapon3).isTwoHanded()) {
-			placeItem(new Placeholder(ItemSpriteSheet.X_NO));
-		} else {
-			placeItem(stuff.weapon4 != null ? stuff.weapon4 : new Placeholder(ItemSpriteSheet.WEAPON_HOLDER));
-		}
-	}
+//	if (shivaWeapon) {
+//		placeItem(stuff.weapon3 != null ? stuff.weapon3 : new Placeholder(ItemSpriteSheet.WEAPON_HOLDER));
+//		if (stuff.weapon3 instanceof MeleeWeapon && ((MeleeWeapon) stuff.weapon3).isTwoHanded()) {
+//			placeItem(new Placeholder(ItemSpriteSheet.X_NO));
+//		} else {
+//			placeItem(stuff.weapon4 != null ? stuff.weapon4 : new Placeholder(ItemSpriteSheet.WEAPON_HOLDER));
+//		}
+//	}
 
     // the container itself if it's not the root backpack
     if (container != hero.belongings.backpack){
