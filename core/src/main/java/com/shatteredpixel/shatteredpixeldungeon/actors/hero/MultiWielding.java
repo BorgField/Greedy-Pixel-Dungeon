@@ -1,11 +1,9 @@
 package com.shatteredpixel.shatteredpixeldungeon.actors.hero;
 
-
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.items.KindOfWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.SpiritBow;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.MissileWeapon;
-import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +44,7 @@ public class MultiWielding {
         KindOfWeapon wep = currentWeapon();
         if (wep == null) return damage;
 
-        // 远程武器不参与双持，直接返回原值
+        // 远程武器不参与双持倍率计算，直接返回proc结果
         if (wep instanceof MissileWeapon || wep instanceof SpiritBow) {
             return wep.proc(attacker, defender, damage);
         }
@@ -86,7 +84,7 @@ public class MultiWielding {
         boolean hasFirstWeapon = weapons[firstWeaponIndex] != null;
         boolean hasSecondWeapon = weapons[secondWeaponIndex] != null;
         boolean isDualWielding = hasFirstWeapon && hasSecondWeapon;
-    
+
         if (weaponIndex == firstWeaponIndex) {
             // 主武器：双持时 75%，单独时 100%
             return isDualWielding ? 0.75f : 1.0f;
@@ -160,33 +158,34 @@ public class MultiWielding {
         anyHit = executeWeaponAttack(
                 enemy, dmgMulti, dmgBonus, accMulti, availableWeapons,
                 weaponIndex1, weaponIndex2, true) || anyHit;
-        
+
         // 如果敌人还活着，执行第二个武器的攻击
         if (enemy.isAlive()) {
             anyHit = executeWeaponAttack(
                     enemy, dmgMulti, 0, accMulti, availableWeapons,
                     weaponIndex2, weaponIndex1, false) || anyHit;
         }
-        
+
         return anyHit;
     }
-    
+
     // 通用的武器攻击执行方法
     private boolean executeWeaponAttack(Char enemy, float dmgMulti, float dmgBonus, float accMulti,
-                                       List<KindOfWeapon> availableWeapons,
-                                       int weaponIndex, int otherWeaponIndex, boolean isFirstWeapon) {
+                                        List<KindOfWeapon> availableWeapons,
+                                        int weaponIndex, int otherWeaponIndex, boolean isFirstWeapon) {
 
         KindOfWeapon weapon = weapons[weaponIndex];
         KindOfWeapon otherWeapon = weapons[otherWeaponIndex];
-        
+
         boolean hasWeapon = weapon != null && availableWeapons.contains(weapon);
         boolean hasOtherWeapon = otherWeapon != null && availableWeapons.contains(otherWeapon);
-        
+
         if (!hasWeapon) {
             return false;
         }
-
-        // 远程武器不参与双持，单独处理
+        // 更新当前攻击索引，确保 weaponProc 能获取正确的武器
+        currentAttackIndex = weaponIndex;
+        // 远程武器不参与双持，单独处理（固定100%伤害，无倍率惩罚）
         if (weapon instanceof MissileWeapon || weapon instanceof SpiritBow) {
             hero.belongings.abilityWeapon = weapon;
             return hero.attack(enemy, dmgMulti, dmgBonus, accMulti);
@@ -194,16 +193,16 @@ public class MultiWielding {
 
         hero.belongings.abilityWeapon = weapon;
         float currentDmgMulti = dmgMulti;
-        
+
         // 计算是否为双持状态
         boolean isDualWielding = hasWeapon && hasOtherWeapon;
-        
+
         // 主武器：双持时 75%，单独时 100%
         // 副武器：双持时 50%，单独时 100%
         if (isDualWielding) {
             currentDmgMulti *= isFirstWeapon ? 0.75f : 0.5f;
         }
-        
+
         // 第二组攻击不享受伤害加成
         float currentDmgBonus = isFirstWeapon ? dmgBonus : 0;
 

@@ -92,42 +92,49 @@ public class ShivaBangle extends Artifact {
 
     @Override
     public void execute( Hero hero, String action ) {
-
+    
         super.execute(hero, action);
-
+    
         if (action.equals(AC_OUTFIT)){
             GameScene.show( new ShivaBangle.WndShivaWeapon(this) );
         }
         if (action.equals(AC_FANATICAL)){
             // 计算消耗的充能：60-5*lv%
             int chargeCost = 60 - 5 * level();
-
+    
             if (charge < chargeCost) {
                 GLog.w(Messages.get(this, "no_charge"));
                 return;
             }
-
+    
             Berserker berserker = hero.buff(Berserker.class);
             boolean isUnarmed = RingOfForce.fightingUnarmed(hero);
-
+                
+            // 根据是否空手确定最大等级
+            int maxLevel = isUnarmed ? 3 : 2;
+    
             if (berserker == null) {
                 // 第一次使用战狂姿态
                 charge -= chargeCost;
                 if (isUnarmed) {
-                    Buff.affect(hero, Berserker.class).setLevel(2); // 空手状态直接lv2
-
+                    Buff.affect(hero, Berserker.class).setLevel(2); // 空手状态直接 lv2
+    
                 } else {
-                    Buff.affect(hero, Berserker.class).setLevel(1); // 非空手状态lv1
-
+                    Buff.affect(hero, Berserker.class).setLevel(1); // 非空手状态 lv1
+    
                 }
             } else {
-                // 已经处于战狂姿态
+                // 已经处于战狂姿态  检查当前状态是否已经达到最大等级
+                if (berserker.getLvl() >= maxLevel) {
+                    return;
+                }
+                    
                 if (charge >= chargeCost) {
                     charge -= chargeCost;
                     // 刷新时间并升级
                     berserker.setCooldown();
                     int newLevel = berserker.getLvl() + 1;
-                    if (newLevel > 3) newLevel = 3; // 最高lv3
+                    if (newLevel > maxLevel) newLevel = maxLevel; // 不超过当前状态的最大等级
                     berserker.setLevel(newLevel);
                     hero.spendAndNext(Actor.TICK);
                     GLog.p(Messages.get(this, "berserker_upgrade", newLevel));
@@ -135,7 +142,7 @@ public class ShivaBangle extends Artifact {
                     GLog.w(Messages.get(this, "no_charge_upgrade"));
                 }
             }
-
+    
             updateQuickslot();
         }
     }
@@ -260,8 +267,19 @@ public class ShivaBangle extends Artifact {
         //攻击时获取经验和充能
         public void onAttack() {
             if (target instanceof Hero) {
-                gainExp(10);
-                charge((Hero) target, 2f);
+                Hero hero = (Hero) target;
+                Berserker berserker = hero.buff(Berserker.class);
+                boolean isUnarmed = RingOfForce.fightingUnarmed(hero);
+                int maxLevel = isUnarmed ? 3 : 2;
+                
+                // 只有在未达到最大等级时才获取充能
+                if (berserker == null || berserker.getLvl() < maxLevel) {
+                    gainExp(10);
+                    charge(hero, 2f);
+                } else {
+                    // 达到最大等级时只获取经验，不获取充能
+                    gainExp(10);
+                }
             }
         }
 
@@ -339,7 +357,7 @@ public class ShivaBangle extends Artifact {
             return false;
         }
 
-        //获取攻击距离加成
+//        //获取攻击距离加成
 //        public int getAttackRangeBonus() {
 //            if (target instanceof Hero) {
 //                Hero hero = (Hero) target;
@@ -463,12 +481,16 @@ public class ShivaBangle extends Artifact {
         }
 
         // 获取攻击距离加成
-//        public int getAttackRangeBonus() {
-//            if (lvl >= 2) {
-//                return lvl - 1; // lv2+1, lv3+2
-//            }
-//            return 0;
-//        }
+        public int getAttackRangeBonus() {
+            switch(lvl) {
+                case 2:
+                    return 1; // lv2: +1 攻击距离
+                case 3:
+                    return 2; // lv3: +2 攻击距离
+                default:
+                    return 0; // lv1: 无加成
+            }
+        }
 
         private static final String COOLDOWN = "cooldown";
         private static final String LEVEL = "level";

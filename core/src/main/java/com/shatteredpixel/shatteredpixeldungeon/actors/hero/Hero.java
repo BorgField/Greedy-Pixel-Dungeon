@@ -788,6 +788,28 @@ public class Hero extends Char {
 			PathFinder.buildDistanceMap(enemy.pos, passable, 3);
 
 			return PathFinder.distance[pos] <= 3;
+		} else if (buff(ShivaBangle.Berserker.class) != null) {
+			// ShivaBangle 战狂姿态增加攻击距离
+			ShivaBangle.Berserker berserker = buff(ShivaBangle.Berserker.class);
+			int rangeBonus = berserker.getAttackRangeBonus();
+
+			if (rangeBonus > 0) {
+				boolean isUnarmed = RingOfForce.fightingUnarmed(this);
+				boolean hasBerserkerBuff = berserker.getLvl() >= 1;
+				// 空手或有战狂 buff 时才能享受攻击距离加成
+				if (isUnarmed || hasBerserkerBuff) {
+					boolean[] passable = BArray.not(Dungeon.level.solid, null);
+					for (Char ch : Actor.chars()) {
+						if (ch != this) passable[ch.pos] = false;
+					}
+					// 基础攻击距离为 1（相邻），加上战狂姿态的加成
+					int maxRange = 1 + rangeBonus;
+					PathFinder.buildDistanceMap(enemy.pos, passable, maxRange);
+
+					return PathFinder.distance[pos] <= maxRange;
+				}
+			}
+			return false;
 		} else {
 			return false;
 		}
