@@ -83,8 +83,6 @@ public class ItemSprite extends MovieClip {
 				return Assets.Sprites.ITEMS;
 			case 1:
 				return Assets.Sprites.ITEMS_TWO;
-			case 2:
-				return Assets.Sprites.ITEMS_SPD;
 			default:
 				return Assets.Sprites.ITEMS;
 		}
