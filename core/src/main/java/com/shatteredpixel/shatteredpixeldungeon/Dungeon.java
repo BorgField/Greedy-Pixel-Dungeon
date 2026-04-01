@@ -46,6 +46,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Imp;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Wandmaker;
 import com.shatteredpixel.shatteredpixeldungeon.custom.buffs.AbsoluteBlindness;
 import com.shatteredpixel.shatteredpixeldungeon.custom.buffs.modifier.LevelSwitchListener;
+import com.shatteredpixel.shatteredpixeldungeon.events.EventManager;
 import com.shatteredpixel.shatteredpixeldungeon.items.Amulet;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
@@ -232,6 +233,9 @@ public class Dungeon {
 	}
 	
 	public static void init() {
+
+		// 初始化事件系统（自动扫描并注册订阅类）
+		EventManager.init();
 
 		initialVersion = version = Game.versionCode;
 		challenges = SPDSettings.challenges();
@@ -724,6 +728,7 @@ public class Dungeon {
 	}
 	
 	public static void loadGame( int save ) throws IOException {
+		EventManager.init();
 		loadGame( save, true );
 	}
 	

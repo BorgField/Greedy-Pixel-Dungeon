@@ -89,6 +89,8 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.effects.SpellSprite;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Splash;
+import com.shatteredpixel.shatteredpixeldungeon.events.EventManager;
+import com.shatteredpixel.shatteredpixeldungeon.events.HeroLevelUpEvent;
 import com.shatteredpixel.shatteredpixeldungeon.items.Ankh;
 import com.shatteredpixel.shatteredpixeldungeon.items.Dewdrop;
 import com.shatteredpixel.shatteredpixeldungeon.items.EquipableItem;
@@ -2120,7 +2122,10 @@ public class Hero extends Char {
 					WndHero.lastIdx = 1;
 				}
 			}
-			
+
+			// 发布英雄升级事件
+			EventManager.emit(new HeroLevelUpEvent(this, lvl - 1, lvl));
+
 			Item.updateQuickslot();
 			
 			Badges.validateLevelReached();

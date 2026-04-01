@@ -2,6 +2,10 @@
 include ':SPD-classes'
 include ':core'
 
+//事件系统模块引入
+include ':event-annotations'
+include ':event-processor'
+
 //platform modules
 include ':android'
 include ':ios'

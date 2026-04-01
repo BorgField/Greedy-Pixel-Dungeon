@@ -63,6 +63,13 @@ configurations { natives }
 dependencies {
     implementation project(':core')
 
+    // 事件系统模块引入
+    implementation project(':event-annotations')
+    annotationProcessor project(':event-processor')
+
+    annotationProcessor 'com.google.auto.service:auto-service:1.1.1'
+
+
     // We are using the natives from 1.11.0 to maintain compatibility with Android 4.0-4.3 for now
     // The 1.12.0+ natives are compiled with a version of the NDK which drops 4.3- support
     // YES, THIS IS VERY DANGEROUS! 1.11.0 natives may only incidentally work with later libGDX versions

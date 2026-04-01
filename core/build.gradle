@@ -6,5 +6,11 @@ sourceCompatibility = targetCompatibility = appJavaCompatibility
 dependencies {
     api project(':SPD-classes')
     implementation project(':services')
+
+    //事件系统模块引入
+    implementation project(':event-annotations')
+    implementation project(':event-processor')
+    annotationProcessor project(':event-processor')
+
     implementation 'cat.ereza:customactivityoncrash:2.2.0'
 }
