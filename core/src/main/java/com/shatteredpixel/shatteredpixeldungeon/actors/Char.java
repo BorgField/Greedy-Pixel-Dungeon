@@ -370,33 +370,6 @@ public abstract class Char extends Actor {
 	}
 
 	final public boolean attack( Char enemy ){
-//		List<KindOfWeapon> weapons = new ArrayList<>();
-//		if (Dungeon.hero.belongings.weapon != null) weapons.add(Dungeon.hero.belongings.weapon);
-//		if (Dungeon.hero.belongings.weapon2 != null) weapons.add(Dungeon.hero.belongings.weapon2);
-//		if (Dungeon.hero.belongings.weapon3 != null) weapons.add(Dungeon.hero.belongings.weapon3);
-//		if (Dungeon.hero.belongings.weapon4 != null) weapons.add(Dungeon.hero.belongings.weapon4);
-//		boolean result = false;
-//		if(this instanceof Hero &&
-//				Dungeon.hero.belongings.thrownWeapon == null ||
-//				Dungeon.hero.belongings.abilityWeapon == null){
-//			for (int i = 0; i < weapons.size(); i++) { // 执行两次攻击
-//				KindOfWeapon wep = weapons.get(i);
-//				GLog.w(wep.trueName());
-//				result |= attack(enemy, 1f, 0f, 1f); // 使用逻辑或运算符确保只要有一次攻击成功，结果就为true
-//				if (!enemy.isAlive()) {
-//					i = -1; // 下次循环时 i 会自增为 0，重新从第一把武器开始
-//					break;
-//				}
-//			}
-//		}
-//		return result;
-//		if (Dungeon.hero.belongings.thrownWeapon != null) {
-//			GLog.i(Dungeon.hero.belongings.thrownWeapon.trueName()+"投掷武器1");
-//		}
-
-//		if (Dungeon.hero.belongings.abilityWeapon != null) {
-//			GLog.w(Dungeon.hero.belongings.abilityWeapon.trueName()+"能力武器1");
-//		}
 		return attack(enemy, 1f, 0f, 1f);
 	}
 	

@@ -52,11 +52,16 @@ import com.watabou.noosa.particles.Emitter;
 import com.watabou.utils.Bundlable;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
+import com.watabou.utils.DeviceCompat;
 import com.watabou.utils.Reflection;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Item implements Bundlable {
 
@@ -99,6 +104,9 @@ public class Item implements Bundlable {
 	public boolean bones = false;
 
 	public int customNoteID = -1;
+	
+	// 动态项目属性Tag系统(懒加载)
+	private Map<String, ItemTag> tags;
 	
 	public static final Comparator<Item> itemComparator = new Comparator<Item>() {
 		@Override
@@ -532,12 +540,39 @@ public class Item implements Bundlable {
 			}
 		}
 
-		return desc();
+		String info = desc();
+		
+		// Append visible tags to item description
+		List<ItemTag> visibleTags = getVisibleTags();
+		if (!visibleTags.isEmpty()) {
+			info += "\n\n";
+			for (ItemTag tag : visibleTags) {
+				info += "Ⅶ #"+ getTagDescription(tag) + "Ⅶ ";
+			}
+		}
+		
+		return info;
 	}
 	
 	public String desc() {
 		return Messages.get(this, "desc")
 				+(isBanUpgraded() ? "\n\n" + Messages.get(Scroll.class, "copyBan_desc") : "");
+	}
+
+	protected String getTagDescription(ItemTag tag) {
+		// Use full key path directly without class prefix
+		String tagKey = "items.tag." + tag.key();
+		String desc = Messages.get((Class)null, tagKey);
+		
+		// If no specific description exists, use a default format
+		if (desc == null || (!desc.isEmpty() && desc.startsWith("!"))) {
+			desc = Messages.get((Class)null, "items.tag.default", tag.key());
+			if (tag.level() > 0) {
+				desc += " (" + tag.level() + ")";
+			}
+		}
+		
+		return desc;
 	}
 	
 	public int quantity() {
@@ -589,6 +624,7 @@ public class Item implements Bundlable {
 	private static final String KEPT_LOST       = "kept_lost";
 	private static final String CUSTOM_NOTE_ID = "custom_note_id";
 	private static final String BAN_UPGRADED   = "ban_upgraded";
+	private static final String TAGS           = "tags";
 	
 	@Override
 	public void storeInBundle( Bundle bundle ) {
@@ -603,6 +639,9 @@ public class Item implements Bundlable {
 		bundle.put( KEPT_LOST, keptThoughLostInvent );
 		if (customNoteID != -1)     bundle.put(CUSTOM_NOTE_ID, customNoteID);
 		bundle.put(BAN_UPGRADED, banUpgraded);
+		if (tags != null && !tags.isEmpty()) {
+			bundle.put(TAGS, new ArrayList<>(tags.values()));
+		}
 	}
 	
 	@Override
@@ -630,6 +669,18 @@ public class Item implements Bundlable {
 		keptThoughLostInvent = bundle.getBoolean( KEPT_LOST );
 		if (bundle.contains(CUSTOM_NOTE_ID))    customNoteID = bundle.getInt(CUSTOM_NOTE_ID);
 		banUpgraded = bundle.getBoolean(BAN_UPGRADED);
+		
+		// 恢复标签
+		if (bundle.contains(TAGS)) {
+			Collection<? extends Bundlable> restoredTags = bundle.getCollection(TAGS);
+			if (restoredTags != null) {
+				for (Bundlable tag : restoredTags) {
+					if (tag instanceof ItemTag) {
+						addTag((ItemTag) tag);
+					}
+				}
+			}
+		}
 	}
 
 	public int targetingPos( Hero user, int dst ){
@@ -726,4 +777,235 @@ public class Item implements Bundlable {
 			return Messages.get(Item.class, "prompt");
 		}
 	};
+
+	// ==================== 标签系统 ====================
+
+	/**
+	 * 获取标签映射(懒加载)
+	 * @return 标签映射实例
+	 */
+	private Map<String, ItemTag> getTagsMap() {
+		if (tags == null) {
+			tags = new HashMap<>();
+		}
+		return tags;
+	}
+	
+	/**
+	 * 给物品添加标签。如果存在相同键的标签，则会被替换。
+	 * @param tag 要添加的标签(可以是预定义标签或新实例)
+	 */
+	public void addTag(ItemTag tag) {
+		if (tag == null || tag.key() == null) return;
+		// 复制标签以避免修改原始预定义实例
+		ItemTag tagCopy = tag.copy();
+		getTagsMap().put(tagCopy.key(), tagCopy);
+		onTagAdded(tagCopy);
+		updateQuickslot();
+	}
+
+	/**
+	 * 批量添加多个标签(优化版,只触发一次UI更新)
+	 * @param tags 要添加的标签数组
+	 */
+	public void addTags(ItemTag... tags) {
+		if (tags == null || tags.length == 0) return;
+		boolean anyAdded = false;
+		for (ItemTag tag : tags) {
+			if (tag != null && tag.key() != null) {
+				// 复制标签以避免修改原始预定义实例
+				ItemTag tagCopy = tag.copy();
+				getTagsMap().put(tagCopy.key(), tagCopy);
+				onTagAdded(tagCopy);
+				anyAdded = true;
+			}
+		}
+		// 只在有标签被添加时才更新UI
+		if (anyAdded) {
+			updateQuickslot();
+		}
+	}
+
+	/**
+	 * 通过键从物品中移除标签。
+	 * @param key 要移除的标签的键
+	 * @return 如果标签被移除返回 true，如果不存在返回 false
+	 */
+	public boolean removeTag(String key) {
+		if (tags == null) return false;
+		ItemTag removed = tags.remove(key);
+		if (removed != null) {
+			onTagRemoved(removed);
+			updateQuickslot();
+		}
+		return removed != null;
+	}
+
+	/**
+	 * 检查物品是否有特定标签。
+	 * @param key 要检查的标签的键
+	 * @return 如果标签存在返回 true
+	 */
+	public boolean hasTag(String key) {
+		return tags != null && tags.containsKey(key);
+	}
+
+	/**
+	 * 检查物品是否有任意一个指定标签
+	 * @param keys 要检查的标签键数组
+	 * @return 如果存在任意一个标签返回 true
+	 */
+	public boolean hasAnyTag(String... keys) {
+		if (tags == null) return false;
+		for (String key : keys) {
+			if (tags.containsKey(key)) return true;
+		}
+		return false;
+	}
+
+	/**
+	 * 检查物品是否同时拥有所有指定标签
+	 * @param keys 要检查的标签键数组
+	 * @return 如果拥有所有标签返回 true
+	 */
+	public boolean hasAllTags(String... keys) {
+		if (tags == null) return false;
+		for (String key : keys) {
+			if (!tags.containsKey(key)) return false;
+		}
+		return true;
+	}
+
+	/**
+	 * 通过键获取特定标签。
+	 * @param key 标签的键
+	 * @return 该标签，如果不存在返回 null
+	 */
+	public ItemTag getTag(String key) {
+		return tags != null ? tags.get(key) : null;
+	}
+
+	/**
+	 * 获取标签的附加数据(便捷方法)
+	 * @param key 标签的键
+	 * @return 标签的附加数据，如果标签不存在返回 null
+	 */
+	public Bundle getTagData(String key) {
+		ItemTag tag = getTag(key);
+		return tag != null ? tag.data() : null;
+	}
+		
+	/**
+	 * 设置标签的附加数据(便捷方法)
+	 * @param key 标签的键
+	 * @param data 要设置的附加数据
+	 */
+	public void setTagData(String key, Bundle data) {
+		if (!hasTag(key)) {
+			addTag(new ItemTag(key));
+		}
+		ItemTag tag = getTag(key);
+		if (tag != null) {
+			tag.setData(data);
+		}
+	}
+
+	/**
+	 * 获取物品的所有可见标签，按优先级排序。
+	 * @return 可见标签列表
+	 */
+	public List<ItemTag> getVisibleTags() {
+		List<ItemTag> visible = new ArrayList<>();
+		if (tags != null) {
+			for (ItemTag tag : tags.values()) {
+				if (tag.isVisible()) {
+					visible.add(tag);
+				}
+			}
+			Collections.sort(visible, ItemTag.orderByPriority);
+		}
+		return visible;
+	}
+
+	/**
+	 * 获取物品的所有标签(包括可见和隐藏标签)。
+	 * @return 所有标签映射的副本
+	 */
+	public Map<String, ItemTag> getAllTags() {
+		return tags != null ? new HashMap<>(tags) : new HashMap<>();
+	}
+
+	/**
+	 * 获取特定标签的等级。
+	 * @param key 标签的键
+	 * @return 标签等级，如果标签不存在返回 0
+	 */
+	public int getTagLevel(String key) {
+		ItemTag tag = getTag(key);
+		return tag != null ? tag.level() : 0;
+	}
+
+	/**
+	 * 设置标签的等级。如果标签不存在则创建。
+	 * @param key 标签的键
+	 * @param level 新的等级
+	 */
+	public void setTagLevel(String key, int level) {
+		if (tags != null && tags.containsKey(key)) {
+			tags.get(key).level(level);
+		} else {
+			addTag(new ItemTag(key, ItemTag.Type.VISIBLE, level));
+		}
+	}
+
+	/**
+	 * 检查物品是否有可见的标签。
+	 * @param key 标签的键
+	 * @return 如果标签存在且可见返回 true
+	 */
+	public boolean hasVisibleTag(String key) {
+		ItemTag tag = getTag(key);
+		return tag != null && tag.isVisible();
+	}
+		
+	/**
+	 * 切换标签的可见性(显示/隐藏)。
+	 * @param key 标签的键
+	 * @param visible true 设为可见，false 设为隐藏
+	 */
+	public void setTagVisibility(String key, boolean visible) {
+		ItemTag tag = getTag(key);
+		if (tag != null) {
+			tag.setType(visible ? ItemTag.Type.VISIBLE : ItemTag.Type.HIDDEN);
+		}
+	}
+
+	/**
+	 * 清空物品的所有标签。
+	 */
+	public void clearTags() {
+		if (tags != null) {
+			tags.clear();
+		}
+		updateQuickslot();
+	}
+
+	/**
+	 * 当添加标签时自动调用。重写此方法以实现标签效果。
+	 * @param tag 被添加的标签
+	 */
+	protected void onTagAdded(ItemTag tag) {
+		// 子类可以重写此方法来处理特定标签效果
+	}
+
+	/**
+	 * 当移除标签时自动调用。重写此方法以清理标签效果。
+	 * @param tag 被移除的标签
+	 */
+	protected void onTagRemoved(ItemTag tag) {
+		// 基础实现: 处理通用状态标签的移除
+		// 子类可以重写此方法来清理特定标签的效果
+	}
+
+	// ==================== 标签系统 ====================
 }
